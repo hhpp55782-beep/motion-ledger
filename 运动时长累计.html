@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#060A12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>运动时长累计 · 丸子的无限进步</title>
+<style>
+:root{
+  --bg:#060A12; --bg2:#0A1120; --bg3:#0E1830;
+  --panel:rgba(255,255,255,.045); --panel2:rgba(255,255,255,.075);
+  --line:rgba(120,180,255,.13); --line2:rgba(120,180,255,.30);
+  --txt:#E8F0FB; --dim:#8CA1BE; --dim2:#5C7290;
+  --cyan:#22D3EE; --blue:#4D8DFF; --indigo:#8B9BFF;
+  --mint:#34D399; --amber:#FBBF24; --rose:#F472B6;
+  --r:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+  font-size:14px; line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(34,211,238,.14), transparent 60%),
+    radial-gradient(800px 520px at 92% 4%, rgba(77,141,255,.13), transparent 62%),
+    radial-gradient(700px 600px at 50% 108%, rgba(139,155,255,.10), transparent 65%);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.35;
+  background-image:linear-gradient(rgba(120,180,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,180,255,.05) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(circle at 50% 30%, #000 0%, transparent 78%);
+  -webkit-mask-image:radial-gradient(circle at 50% 30%, #000 0%, transparent 78%);
+}
+.bgwm{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(38px,9vw,110px);font-weight:700;letter-spacing:.22em;
+  color:rgba(120,180,255,.045);transform:rotate(-16deg);white-space:nowrap;
+}
+.wrap{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:22px 16px 120px}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+  background:linear-gradient(145deg,rgba(34,211,238,.30),rgba(77,141,255,.22));
+  border:1px solid var(--line2);box-shadow:0 0 18px rgba(34,211,238,.18)}
+.logo svg{width:18px;height:18px}
+.brand b{font-size:15px;font-weight:600;letter-spacing:.04em}
+.brand span{display:block;font-size:11px;color:var(--dim2);letter-spacing:.18em;margin-top:-2px}
+.ghostbtn{background:var(--panel);border:1px solid var(--line);color:var(--dim);
+  border-radius:10px;padding:7px 12px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.18s}
+.ghostbtn:hover{color:var(--txt);border-color:var(--line2);background:var(--panel2)}
+
+/* hero */
+.hero{position:relative;border:1px solid var(--line);border-radius:22px;overflow:hidden;
+  background:linear-gradient(150deg,rgba(20,34,64,.72),rgba(9,14,26,.72));
+  padding:26px 22px 22px;margin-bottom:14px}
+.hero::before{content:"";position:absolute;top:-1px;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(34,211,238,.65),rgba(77,141,255,.5),transparent)}
+.hero-grid{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.hero-main{flex:1 1 260px;min-width:0}
+.kicker{font-size:11.5px;letter-spacing:.24em;color:var(--cyan);opacity:.85;margin-bottom:8px}
+.bignum{display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
+.bignum em{font-style:normal;font-size:clamp(46px,12vw,72px);font-weight:600;letter-spacing:-.02em;line-height:1;
+  background:linear-gradient(180deg,#FFFFFF,#8ED9F2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bignum i{font-style:normal;font-size:17px;color:var(--dim);font-weight:400}
+.subline{margin-top:10px;font-size:12.5px;color:var(--dim)}
+.subline b{color:var(--mint);font-weight:500}
+.ringbox{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px}
+.ringwrap{position:relative;width:132px;height:132px}
+.ringwrap svg{transform:rotate(-90deg)}
+.ringtxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.ringtxt b{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.ringtxt span{font-size:11px;color:var(--dim2)}
+.ringcap{font-size:11.5px;color:var(--dim2);letter-spacing:.08em}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:12px 13px}
+.stat u{display:block;text-decoration:none;font-size:11.5px;color:var(--dim2);letter-spacing:.06em}
+.stat b{display:block;font-size:20px;font-weight:600;margin-top:5px;font-variant-numeric:tabular-nums}
+.stat small{font-size:11px;color:var(--dim2);font-weight:400;margin-left:2px}
+
+/* card */
+.card{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:16px 17px;margin-bottom:14px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+.card-h h2{margin:0;font-size:14px;font-weight:600;letter-spacing:.03em}
+.card-h p{margin:0;font-size:11.5px;color:var(--dim2)}
+
+/* today */
+.daynav{display:flex;align-items:center;gap:8px}
+.daynav button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);
+  background:transparent;color:var(--dim);cursor:pointer;font-size:14px;line-height:1;transition:.18s}
+.daynav button:hover{color:var(--txt);border-color:var(--line2)}
+.daynav b{font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;min-width:96px;text-align:center}
+.plans{display:flex;flex-direction:column;gap:9px}
+.plan{display:flex;align-items:center;gap:13px;padding:12px 13px;border-radius:13px;
+  border:1px solid var(--line);background:rgba(255,255,255,.025);transition:.2s}
+.plan.done{border-color:rgba(52,211,153,.42);background:rgba(52,211,153,.08)}
+.plan.skip{opacity:.42}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 10px currentColor}
+.plan-i{flex:1 1 auto;min-width:0}
+.plan-i b{display:block;font-size:13.5px;font-weight:500}
+.plan-i span{font-size:11.5px;color:var(--dim2)}
+.minbox{display:flex;align-items:center;gap:4px}
+.minbox input{width:52px;text-align:center;background:rgba(0,0,0,.28);border:1px solid var(--line);
+  color:var(--txt);border-radius:8px;padding:5px 4px;font-size:13px;font-family:inherit;font-variant-numeric:tabular-nums}
+.minbox u{text-decoration:none;font-size:11px;color:var(--dim2)}
+.act{border:1px solid var(--line);background:transparent;color:var(--dim);border-radius:9px;
+  padding:6px 11px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.18s;white-space:nowrap}
+.act:hover{color:var(--txt);border-color:var(--line2);background:var(--panel2)}
+.act.ok{border-color:rgba(52,211,153,.5);color:var(--mint);background:rgba(52,211,153,.12)}
+.act.no{border-color:rgba(244,114,182,.4);color:var(--rose)}
+.empty{font-size:12.5px;color:var(--dim2);text-align:center;padding:16px 0}
+
+/* quick add */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--dim);border-radius:999px;
+  padding:6px 13px;font-size:12.5px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:.18s}
+.chip:hover{color:var(--txt);border-color:var(--line2)}
+.chip.on{color:var(--txt);border-color:var(--line2);background:var(--panel2)}
+.formrow{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:5px;flex:1 1 110px;min-width:0}
+.field u{text-decoration:none;font-size:11px;color:var(--dim2);letter-spacing:.06em}
+.field input,.field select{background:rgba(0,0,0,.28);border:1px solid var(--line);color:var(--txt);
+  border-radius:10px;padding:9px 11px;font-size:13px;font-family:inherit;width:100%}
+.field input:focus,.field select:focus{outline:none;border-color:var(--line2)}
+.field select option{background:#0E1830}
+.pri{border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;
+  font-family:inherit;color:#04121B;background:linear-gradient(135deg,#67E8F9,#4D8DFF);
+  box-shadow:0 6px 20px rgba(34,211,238,.24);transition:.18s}
+.pri:hover{filter:brightness(1.08)}
+
+/* dist */
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar{display:grid;grid-template-columns:78px 1fr 88px;align-items:center;gap:11px}
+.bar span{font-size:12.5px;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.track{height:9px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.fill{height:100%;border-radius:999px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.bar b{font-size:12.5px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums;color:var(--dim)}
+.bar b i{font-style:normal;color:var(--dim2);font-size:11px;margin-left:4px}
+
+/* heatmap */
+.hmwrap{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.hmwrap::-webkit-scrollbar{height:6px}
+.hmwrap::-webkit-scrollbar-thumb{background:rgba(120,180,255,.22);border-radius:3px}
+.legend{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim2);margin-top:9px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* records */
+.recs{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;padding-right:4px}
+.recs::-webkit-scrollbar{width:6px}
+.recs::-webkit-scrollbar-thumb{background:rgba(120,180,255,.22);border-radius:3px}
+.rec{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:11px;
+  border:1px solid var(--line);background:rgba(255,255,255,.022)}
+.rec-i{flex:1 1 auto;min-width:0}
+.rec-i b{font-size:13px;font-weight:500}
+.rec-i span{font-size:11px;color:var(--dim2);margin-left:6px}
+.rec b.h{font-variant-numeric:tabular-nums;color:var(--cyan);font-size:13px}
+.del{border:none;background:transparent;color:var(--dim2);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px}
+.del:hover{color:var(--rose)}
+
+/* settings */
+details{border-top:1px solid var(--line);margin-top:4px;padding-top:12px}
+summary{cursor:pointer;font-size:12.5px;color:var(--dim);list-style:none;padding:4px 0}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--cyan)}
+details[open] summary::before{content:"▾ "}
+.setgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-top:12px}
+.tip{margin-top:12px;font-size:12px;color:var(--dim2);border-left:2px solid rgba(34,211,238,.5);padding-left:10px}
+.note{font-size:11.5px;color:var(--dim2);margin-top:9px;line-height:1.7}
+.errbar{display:none;border:1px solid rgba(244,114,182,.45);background:rgba(244,114,182,.10);
+  color:#F9A8D4;border-radius:12px;padding:10px 13px;font-size:12.5px;margin-bottom:14px;word-break:break-all}
+.hint{display:flex;gap:9px;align-items:center;border:1px solid rgba(251,191,36,.35);
+  background:rgba(251,191,36,.08);border-radius:12px;padding:10px 13px;font-size:12.5px;color:#F3D69A;margin-bottom:14px}
+.hint button{margin-left:auto}
+
+.wm{position:fixed;right:14px;bottom:14px;z-index:5;pointer-events:none;
+  font-size:11.5px;letter-spacing:.16em;color:rgba(150,200,255,.34);
+  border:1px solid rgba(150,200,255,.16);border-radius:999px;padding:6px 13px;
+  background:rgba(6,12,22,.55);backdrop-filter:blur(6px)}
+.foot{text-align:center;font-size:11px;color:var(--dim2);letter-spacing:.14em;margin-top:26px}
+.toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%) translateY(16px);z-index:20;
+  background:rgba(14,24,48,.94);border:1px solid var(--line2);color:var(--txt);
+  padding:9px 18px;border-radius:999px;font-size:12.5px;opacity:0;transition:.28s;pointer-events:none;
+  backdrop-filter:blur(8px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:640px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .hero-grid{flex-direction:column;align-items:stretch}
+  .ringbox{align-self:center}
+  .bar{grid-template-columns:64px 1fr 74px}
+}
+</style>
+</head>
+<body>
+<div class="bgwm">丸子的无限进步</div>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#7DE9FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>
+        </svg>
+      </div>
+      <div>
+        <b>运动时长累计</b>
+        <span>MOTION LEDGER</span>
+      </div>
+    </div>
+    <button class="ghostbtn" id="btnSet">设置</button>
+  </div>
+
+  <div id="errbar" class="errbar"></div>
+
+  <div id="hintBase" class="hint" style="display:none">
+    <span>还没设置历史基数。去设置里填一个过去累计的小时数，之后的运动就在它之上累加。</span>
+    <button class="ghostbtn" id="hintGo">去设置</button>
+  </div>
+
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-main">
+        <div class="kicker">LIFETIME TOTAL · 一生累计</div>
+        <div class="bignum"><em id="totalH">0</em><i>小时</i></div>
+        <div class="subline" id="subline">已记录 <b>0</b> 次运动 · 起始于 <span id="startDate">—</span></div>
+      </div>
+      <div class="ringbox">
+        <div class="ringwrap">
+          <svg width="132" height="132" viewBox="0 0 132 132">
+            <circle cx="66" cy="66" r="56" fill="none" stroke="rgba(120,180,255,.13)" stroke-width="10"/>
+            <circle id="ringArc" cx="66" cy="66" r="56" fill="none" stroke="url(#grad)" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+            <defs>
+              <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#22D3EE"/><stop offset="100%" stop-color="#4D8DFF"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="ringtxt"><b id="ringPct">0%</b><span>年度目标</span></div>
+        </div>
+        <div class="ringcap"><span id="yearH">0</span> / <span id="goalH">650</span> 小时</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="stat"><u>本周</u><b id="weekH">0<small>h</small></b></div>
+    <div class="stat"><u>本月</u><b id="monthH">0<small>h</small></b></div>
+    <div class="stat"><u>今年</u><b id="yearH2">0<small>h</small></b></div>
+    <div class="stat"><u>连续天数</u><b id="streak">0<small>天</small></b></div>
+  </div>
+
+  <section class="card">
+    <div class="card-h">
+      <div><h2>今日课程</h2><p>固定日程自动带出，确认后计入</p></div>
+      <div class="daynav">
+        <button id="prevDay" aria-label="前一天">‹</button>
+        <b id="dayLabel">—</b>
+        <button id="nextDay" aria-label="后一天">›</button>
+      </div>
+    </div>
+    <div class="plans" id="plans"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><div><h2>临时运动打卡</h2><p>滑板 · 游泳 · 爬山 · 徒步 · 其他</p></div></div>
+    <div class="chips" id="chips"></div>
+    <div class="formrow">
+      <div class="field"><u>项目</u>
+        <select id="qType"></select>
+      </div>
+      <div class="field"><u>时长（分钟）</u>
+        <input id="qMin" type="number" min="1" max="600" value="60" inputmode="numeric">
+      </div>
+      <div class="field"><u>日期</u>
+        <input id="qDate" type="date">
+      </div>
+      <button class="pri" id="btnAdd">记录</button>
+    </div>
+    <div class="note">也可以直接点上面的标签，默认 60 分钟、日期为今天，再点「记录」即可。</div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><div><h2>项目分布</h2><p>各运动累计时长与占比</p></div></div>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><div><h2>累计增长曲线</h2><p id="chartCap">按月累计</p></div></div>
+    <div id="chart"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><div><h2>年度热力图</h2><p>最近一年每日运动强度</p></div></div>
+    <div class="hmwrap" id="hmwrap"></div>
+    <div class="legend">
+      <span>少</span>
+      <i style="background:rgba(34,211,238,.10)"></i>
+      <i style="background:rgba(34,211,238,.28)"></i>
+      <i style="background:rgba(34,211,238,.52)"></i>
+      <i style="background:rgba(34,211,238,.78)"></i>
+      <i style="background:rgba(120,230,255,1)"></i>
+      <span>多</span>
+    </div>
+  </section>
+
+  <section class="card" id="setCard" style="display:none">
+    <div class="card-h"><div><h2>设置</h2><p>基数 · 目标 · 数据管理</p></div></div>
+    <div class="setgrid">
+      <div class="field"><u>历史基数（小时）</u><input id="setBase" type="number" min="0" step="0.5" value="0"></div>
+      <div class="field"><u>年度目标（小时）</u><input id="setGoal" type="number" min="1" step="10" value="650"></div>
+      <div class="field"><u>开始记录日期</u><input id="setStart" type="date"></div>
+    </div>
+    <div class="formrow" style="margin-top:13px">
+      <button class="act" id="btnSave">保存设置</button>
+      <button class="act" id="btnExport">导出 JSON</button>
+      <button class="act" id="btnImport">导入 JSON</button>
+      <button class="act no" id="btnClear">清空全部记录</button>
+    </div>
+    <input type="file" id="fileIn" accept="application/json,.json" style="display:none">
+    <div class="tip">数据只存在这台设备的浏览器里。换设备或清缓存前，记得先导出一份 JSON。</div>
+    <details style="margin-top:16px">
+      <summary>固定日程规则（当前生效）</summary>
+      <div class="note" id="ruleList"></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><div><h2>记录流水</h2><p id="recCount">共 0 条</p></div></div>
+    <div class="recs" id="recs"></div>
+  </section>
+
+  <div class="foot">丸子的无限进步 · 持续记录，时间看得见</div>
+</div>
+
+<div class="wm">丸子的无限进步</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var KEY = "motionLedger.v1";
+
+  var TYPES = [
+    {name:"瑜伽",   color:"#22D3EE"},
+    {name:"拉丁",   color:"#A78BFA"},
+    {name:"羽毛球", color:"#4D8DFF"},
+    {name:"滑板",   color:"#34D399"},
+    {name:"游泳",   color:"#38BDF8"},
+    {name:"爬山",   color:"#F472B6"},
+    {name:"徒步",   color:"#FBBF24"},
+    {name:"其他",   color:"#94A3B8"}
+  ];
+  function colorOf(n){ for(var i=0;i<TYPES.length;i++){ if(TYPES[i].name===n) return TYPES[i].color; } return "#94A3B8"; }
+
+  var FIXED = [
+    {d:1, slot:"晚上", type:"瑜伽",   min:90},
+    {d:2, slot:"中午", type:"拉丁",   min:60},
+    {d:2, slot:"晚上", type:"羽毛球", min:90},
+    {d:3, slot:"晚上", type:"瑜伽",   min:90},
+    {d:4, slot:"中午", type:"拉丁",   min:60},
+    {d:4, slot:"晚上", type:"羽毛球", min:90},
+    {d:5, slot:"晚上", type:"拉丁",   min:90},
+    {d:6, slot:"早上", type:"瑜伽",   min:90},
+    {d:0, slot:"晚上", type:"拉丁",   min:90}
+  ];
+
+  var WD = ["周日","周一","周二","周三","周四","周五","周六"];
+
+  var state = {
+    baseHours: 0,
+    goal: 650,
+    startDate: "",
+    records: [],
+    skips: {}
+  };
+
+  /* ---------- utils ---------- */
+  function pad(n){ return n<10 ? "0"+n : ""+n; }
+  function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function parseYmd(s){ var p=String(s).split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function today(){ var d=new Date(); return new Date(d.getFullYear(),d.getMonth(),d.getDate()); }
+  function addDays(d,n){ var x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){
+    return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); }
+  function h1(min){ return (Math.round(min/6)/10); }
+  function fx(n,d){ var v=Math.round(n*Math.pow(10,d))/Math.pow(10,d); return v.toFixed(d); }
+  function weekStart(d){ var x=new Date(d.getTime()); var k=(x.getDay()+6)%7; x.setDate(x.getDate()-k); return x; }
+  function toast(msg){
+    var t=document.getElementById("toast");
+    t.textContent=msg; t.classList.add("show");
+    clearTimeout(t._tm); t._tm=setTimeout(function(){ t.classList.remove("show"); },1900);
+  }
+
+  /* ---------- storage ---------- */
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(raw){
+        var o = JSON.parse(raw);
+        if(o && typeof o==="object"){
+          state.baseHours = Number(o.baseHours)||0;
+          state.goal = Number(o.goal)||650;
+          state.startDate = o.startDate || "";
+          state.records = Array.isArray(o.records) ? o.records : [];
+          state.skips = (o.skips && typeof o.skips==="object") ? o.skips : {};
+        }
+      }
+    }catch(e){}
+    if(!state.startDate) state.startDate = ymd(today());
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+  /* ---------- derived ---------- */
+  function totalMinutes(){
+    var s=0; for(var i=0;i<state.records.length;i++) s += Number(state.records[i].min)||0;
+    return s;
+  }
+  function totalHours(){ return state.baseHours + totalMinutes()/60; }
+  function sumRange(from,to){
+    var s=0;
+    for(var i=0;i<state.records.length;i++){
+      var d=state.records[i].date;
+      if(d>=from && d<=to) s += Number(state.records[i].min)||0;
+    }
+    return s;
+  }
+  function yearOf(d){ return String(d).slice(0,4); }
+
+  /* ---------- render: hero ---------- */
+  function renderHero(){
+    var th = totalHours();
+    document.getElementById("totalH").textContent = fx(th,1);
+    document.getElementById("subline").innerHTML =
+      "已记录 <b>"+state.records.length+"</b> 次运动 · 起始于 <span>"+esc(state.startDate||"—")+"</span>";
+
+    var now = new Date();
+    var yFrom = now.getFullYear()+"-01-01", yTo = now.getFullYear()+"-12-31";
+    var yh = sumRange(yFrom,yTo)/60;
+    document.getElementById("yearH").textContent = fx(yh,0);
+    document.getElementById("yearH2").innerHTML = fx(yh,1)+"<small>h</small>";
+    document.getElementById("goalH").textContent = fx(state.goal,0);
+
+    var pct = state.goal>0 ? Math.min(1, yh/state.goal) : 0;
+    document.getElementById("ringPct").textContent = Math.round(pct*100)+"%";
+    var C = 2*Math.PI*56;
+    document.getElementById("ringArc").setAttribute("stroke-dasharray", C.toFixed(2));
+    document.getElementById("ringArc").setAttribute("stroke-dashoffset", (C*(1-pct)).toFixed(2));
+
+    var ws = weekStart(today());
+    var wh = sumRange(ymd(ws), ymd(addDays(ws,6)))/60;
+    document.getElementById("weekH").innerHTML = fx(wh,1)+"<small>h</small>";
+
+    var mFrom = now.getFullYear()+"-"+pad(now.getMonth()+1)+"-01";
+    var mLast = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    var mTo = now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(mLast);
+    document.getElementById("monthH").innerHTML = fx(sumRange(mFrom,mTo)/60,1)+"<small>h</small>";
+
+    document.getElementById("streak").innerHTML = calcStreak()+"<small>天</small>";
+  }
+
+  function calcStreak(){
+    var set = {};
+    for(var i=0;i<state.records.length;i++) set[state.records[i].date]=1;
+    var n=0, cur=today();
+    if(!set[ymd(cur)]) cur = addDays(cur,-1);
+    while(set[ymd(cur)]){ n++; cur = addDays(cur,-1); if(n>3650) break; }
+    return n;
+  }
+
+  /* ---------- render: today ---------- */
+  var curDay = today();
+  function renderDay(){
+    var key = ymd(curDay);
+    var d = new Date(curDay.getTime());
+    var isToday = key===ymd(today());
+    document.getElementById("dayLabel").textContent =
+      (isToday?"今天 · ":"")+ (d.getMonth()+1)+"月"+d.getDate()+"日 "+WD[d.getDay()];
+
+    var wd = d.getDay();
+    var list = [];
+    for(var i=0;i<FIXED.length;i++){ if(FIXED[i].d===wd) list.push({k:wd+"-"+i, p:FIXED[i]}); }
+
+    var box = document.getElementById("plans");
+    if(!list.length){ box.innerHTML = '<div class="empty">这天没有固定课程，可以自由安排</div>'; return; }
+
+    var html = "";
+    for(var j=0;j<list.length;j++){
+      var it = list[j], p = it.p, k = key+"|"+it.k;
+      var rec = findFixed(k);
+      var skipped = !!(state.skips[key] && state.skips[key].indexOf(it.k)>=0);
+      var cls = rec ? "done" : (skipped ? "skip" : "");
+      var min = rec ? rec.min : p.min;
+      html += '<div class="plan '+cls+'">'
+        + '<span class="dot" style="background:'+colorOf(p.type)+';color:'+colorOf(p.type)+'"></span>'
+        + '<div class="plan-i"><b>'+esc(p.type)+'</b><span>'+esc(p.slot)+' · 默认 '+p.min+' 分钟</span></div>'
+        + '<div class="minbox"><input type="number" min="1" max="600" value="'+min+'" data-k="'+esc(k)+'" class="minInput"><u>分钟</u></div>'
+        + (rec
+            ? '<button class="act ok" data-del="'+esc(rec.id)+'">已完成 · 撤销</button>'
+            : '<button class="act" data-fixed="'+esc(k)+'" data-type="'+esc(p.type)+'" data-slot="'+esc(p.slot)+'">确认完成</button>')
+        + (rec ? '' : (skipped
+            ? '<button class="act" data-unskip="'+esc(it.k)+'">已跳过</button>'
+            : '<button class="act no" data-skip="'+esc(it.k)+'">跳过</button>'))
+        + '</div>';
+    }
+    box.innerHTML = html;
+  }
+  function findFixed(k){
+    for(var i=0;i<state.records.length;i++){
+      if(state.records[i].fk===k) return state.records[i];
+    }
+    return null;
+  }
+
+  /* ---------- render: chips + select ---------- */
+  function renderTypes(){
+    var extra = ["滑板","游泳","爬山","徒步","其他"];
+    var chips = document.getElementById("chips");
+    var h = "";
+    for(var i=0;i<extra.length;i++){
+      h += '<button class="chip'+(i===0?" on":"")+'" data-type="'+esc(extra[i])+'">'
+         + '<span class="dot" style="background:'+colorOf(extra[i])+';color:'+colorOf(extra[i])+'"></span>'+esc(extra[i])+'</button>';
+    }
+    chips.innerHTML = h;
+
+    var sel = document.getElementById("qType");
+    var o = "";
+    for(var j=0;j<TYPES.length;j++) o += '<option value="'+esc(TYPES[j].name)+'">'+esc(TYPES[j].name)+'</option>';
+    sel.innerHTML = o;
+    sel.value = "滑板";
+  }
+
+  /* ---------- render: distribution ---------- */
+  function renderBars(){
+    var map = {};
+    for(var i=0;i<state.records.length;i++){
+      var r=state.records[i]; map[r.type] = (map[r.type]||0) + (Number(r.min)||0);
+    }
+    var arr=[];
+    for(var k in map){ if(map.hasOwnProperty(k)) arr.push({type:k, min:map[k]}); }
+    arr.sort(function(a,b){ return b.min-a.min; });
+    var max = arr.length ? arr[0].min : 0;
+    var total = totalMinutes();
+
+    var box = document.getElementById("bars");
+    if(!arr.length){ box.innerHTML = '<div class="empty">还没有记录，先完成一次打卡吧</div>'; return; }
+    var h="";
+    for(var j=0;j<arr.length;j++){
+      var it=arr[j], c=colorOf(it.type);
+      var w = max>0 ? Math.max(4, it.min/max*100) : 0;
+      var pct = total>0 ? Math.round(it.min/total*100) : 0;
+      h += '<div class="bar">'
+        + '<span><i class="dot" style="background:'+c+';color:'+c+'"></i>'+esc(it.type)+'</span>'
+        + '<div class="track"><div class="fill" style="width:'+w+'%;background:linear-gradient(90deg,'+c+'55,'+c+')"></div></div>'
+        + '<b>'+fx(it.min/60,1)+'h<i>'+pct+'%</i></b></div>';
+    }
+    box.innerHTML = h;
+  }
+
+  /* ---------- render: heatmap ---------- */
+  function renderHeat(){
+    var byDay = {};
+    for(var i=0;i<state.records.length;i++){
+      byDay[state.records[i].date] = (byDay[state.records[i].date]||0) + (Number(state.records[i].min)||0);
+    }
+    var gridStart = addDays(weekStart(today()), -364);
+
+    var cell=12, gap=3, step=cell+gap;
+    var weeks = 53;
+    var w = 26 + weeks*step + 8;
+    var h = 20 + 7*step + 4;
+
+    var svg = '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="最近一年每日运动时长热力图">';
+    var mn=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+    var mi=0;
+    for(var wi=0; wi<weeks; wi++){
+      var colDate = addDays(gridStart, wi*7);
+      if(colDate.getDate()<=7 && mi<12){
+        svg += '<text x="'+(26+wi*step)+'" y="11" font-size="10" fill="#5C7290">'+mn[colDate.getMonth()]+'</text>';
+        mi++;
+      }
+    }
+    var yl=["一","","三","","五","","日"];
+    for(var r=0;r<7;r++){
+      if(yl[r]) svg += '<text x="4" y="'+(20+r*step+9)+'" font-size="10" fill="#5C7290">'+yl[r]+'</text>';
+      for(var c=0;c<weeks;c++){
+        var d = addDays(gridStart, c*7+r);
+        var key = ymd(d);
+        var v = byDay[key]||0;
+        var op = v===0 ? 0 : (v<45 ? .18 : (v<90 ? .40 : (v<150 ? .68 : 1)));
+        var fill = op===0 ? "rgba(255,255,255,.05)" : "rgba(34,211,238,"+op+")";
+        var stroke = key===ymd(today()) ? "#FBBF24" : "rgba(255,255,255,.04)";
+        var future = d>today();
+        if(future) fill = "rgba(255,255,255,.02)";
+        svg += '<rect x="'+(26+c*step)+'" y="'+(20+r*step)+'" width="'+cell+'" height="'+cell+'" rx="3" '
+             + 'fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+(key===ymd(today())?1.4:1)+'">'
+             + '<title>'+key+" · "+fx(v/60,1)+' 小时</title></rect>';
+      }
+    }
+    svg += '</svg>';
+    document.getElementById("hmwrap").innerHTML = svg;
+  }
+
+  /* ---------- render: cumulative chart ---------- */
+  function renderChart(){
+    var box = document.getElementById("chart");
+    if(!state.records.length){
+      box.innerHTML = '<div class="empty">还没有足够数据，记录几次之后这里会出现增长曲线</div>';
+      document.getElementById("chartCap").textContent = "按月累计";
+      return;
+    }
+    var sorted = state.records.slice().sort(function(a,b){ return a.date<b.date ? -1 : (a.date>b.date?1:0); });
+    var first = parseYmd(sorted[0].date);
+    var spanDays = Math.round((today().getTime()-first.getTime())/86400000);
+
+    var pts=[], cap="";
+    if(spanDays > 120){
+      var buckets = {}, order=[];
+      for(var i=0;i<sorted.length;i++){
+        var m = sorted[i].date.slice(0,7);
+        if(!buckets[m]){ buckets[m]=0; order.push(m); }
+        buckets[m] += Number(sorted[i].min)||0;
+      }
+      var lastM = ymd(today()).slice(0,7);
+      if(order.indexOf(lastM)<0) order.push(lastM);
+      order.sort();
+      var acc = state.baseHours;
+      for(var j=0;j<order.length;j++){
+        acc += (buckets[order[j]]||0)/60;
+        pts.push({label: order[j].slice(5)+"月", v: acc});
+      }
+      cap = "按月累计（含历史基数）";
+    }else{
+      var map={};
+      for(var k=0;k<sorted.length;k++){ map[sorted[k].date] = (map[sorted[k].date]||0)+(Number(sorted[k].min)||0); }
+      var acc2 = state.baseHours;
+      var d0 = first;
+      var guard=0;
+      while(d0 <= today() && guard<800){
+        var key = ymd(d0);
+        acc2 += (map[key]||0)/60;
+        pts.push({label:(d0.getMonth()+1)+"/"+d0.getDate(), v:acc2});
+        d0 = addDays(d0,1); guard++;
+      }
+      cap = "按日累计（含历史基数）";
+    }
+    document.getElementById("chartCap").textContent = cap;
+
+    var W=620, H=210, pl=44, pr=14, pt=16, pb=30;
+    var iw = W-pl-pr, ih = H-pt-pb;
+    var vs = [];
+    for(var m2=0;m2<pts.length;m2++) vs.push(pts[m2].v);
+    var vmax = Math.max.apply(null, vs), vmin = Math.min.apply(null, vs);
+    if(vmax===vmin) vmax = vmin+1;
+    var pad = (vmax-vmin)*0.12;
+    var lo = Math.max(0, vmin-pad), hi = vmax+pad;
+
+    function X(i){ return pl + (pts.length<=1 ? iw/2 : i/(pts.length-1)*iw); }
+    function Y(v){ return pt + ih - (v-lo)/(hi-lo)*ih; }
+
+    var line="", area="";
+    for(var q=0;q<pts.length;q++){
+      var x=X(q), y=Y(pts[q].v);
+      line += (q===0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1)+" ";
+    }
+    area = line + "L"+X(pts.length-1).toFixed(1)+" "+(pt+ih)+" L"+X(0).toFixed(1)+" "+(pt+ih)+" Z";
+
+    var svg = '<svg width="100%" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="累计运动时长增长曲线">';
+    svg += '<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">'
+         + '<stop offset="0%" stop-color="rgba(34,211,238,.34)"/><stop offset="100%" stop-color="rgba(34,211,238,0)"/></linearGradient></defs>';
+    for(var g=0; g<=3; g++){
+      var gv = lo + (hi-lo)*g/3, gy = Y(gv);
+      svg += '<line x1="'+pl+'" y1="'+gy.toFixed(1)+'" x2="'+(W-pr)+'" y2="'+gy.toFixed(1)+'" stroke="rgba(120,180,255,.10)" stroke-width="1"/>';
+      svg += '<text x="'+(pl-8)+'" y="'+(gy+4).toFixed(1)+'" font-size="10" fill="#5C7290" text-anchor="end">'+fx(gv,0)+'</text>';
+    }
+    svg += '<path d="'+area+'" fill="url(#ag)"/>';
+    svg += '<path d="'+line+'" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    var lastX = X(pts.length-1), lastY = Y(pts[pts.length-1].v);
+    svg += '<circle cx="'+lastX.toFixed(1)+'" cy="'+lastY.toFixed(1)+'" r="4" fill="#22D3EE"/>';
+    svg += '<circle cx="'+lastX.toFixed(1)+'" cy="'+lastY.toFixed(1)+'" r="8" fill="rgba(34,211,238,.22)"/>';
+    var stepL = Math.max(1, Math.ceil(pts.length/8));
+    for(var t=0;t<pts.length;t+=stepL){
+      svg += '<text x="'+X(t).toFixed(1)+'" y="'+(H-10)+'" font-size="10" fill="#5C7290" text-anchor="middle">'+esc(pts[t].label)+'</text>';
+    }
+    svg += '<text x="'+(W-pr)+'" y="'+(pt+10)+'" font-size="10" fill="#8CA1BE" text-anchor="end">'+fx(pts[pts.length-1].v,1)+' 小时</text>';
+    svg += '</svg>';
+    box.innerHTML = svg;
+  }
+
+  /* ---------- render: records ---------- */
+  function renderRecs(){
+    var arr = state.records.slice().sort(function(a,b){
+      if(a.date!==b.date) return a.date<b.date ? 1 : -1;
+      return (b.id||0)-(a.id||0);
+    });
+    document.getElementById("recCount").textContent = "共 "+arr.length+" 条";
+    var box = document.getElementById("recs");
+    if(!arr.length){ box.innerHTML = '<div class="empty">暂无记录</div>'; return; }
+    var h="";
+    for(var i=0;i<arr.length && i<200;i++){
+      var r=arr[i], c=colorOf(r.type);
+      var tag = r.src==="fixed" ? "固定课" : "临时";
+      h += '<div class="rec">'
+        + '<span class="dot" style="background:'+c+';color:'+c+'"></span>'
+        + '<div class="rec-i"><b>'+esc(r.type)+'</b><span>'+esc(r.date)+' · '+esc(tag)+'</span></div>'
+        + '<b class="h">'+fx((Number(r.min)||0)/60,1)+'h</b>'
+        + '<button class="del" data-del="'+esc(r.id)+'" aria-label="删除">×</button></div>';
+    }
+    box.innerHTML = h;
+  }
+
+  /* ---------- render: rules ---------- */
+  function renderRules(){
+    var order=[1,2,3,4,5,6,0], h="";
+    for(var i=0;i<order.length;i++){
+      var d=order[i], items=[];
+      for(var j=0;j<FIXED.length;j++) if(FIXED[j].d===d) items.push(FIXED[j].slot+" "+FIXED[j].type+" "+FIXED[j].min+"分钟");
+      h += WD[d]+"：" + items.join(" ／ ") + "<br>";
+    }
+    h += "每周合计 12.5 小时 · 一年约 650 小时";
+    document.getElementById("ruleList").innerHTML = h;
+  }
+
+  function safe(name, fn){
+    try{ fn(); }catch(err){
+      if(window.console && console.error) console.error("["+name+"] "+err.message);
+      var box = document.getElementById("errbar");
+      if(box){ box.style.display="block"; box.textContent = "渲染出错：" + name + " — " + err.message; }
+    }
+  }
+  function renderAll(){
+    safe("大盘", renderHero);
+    safe("今日课程", renderDay);
+    safe("项目分布", renderBars);
+    safe("热力图", renderHeat);
+    safe("增长曲线", renderChart);
+    safe("记录流水", renderRecs);
+    var hb = document.getElementById("hintBase");
+    if(hb) hb.style.display = (state.baseHours===0 && !state.records.length) ? "flex" : "none";
+  }
+
+  /* ---------- events ---------- */
+  document.getElementById("prevDay").onclick = function(){ curDay = addDays(curDay,-1); renderDay(); };
+  document.getElementById("nextDay").onclick = function(){
+    if(ymd(curDay) >= ymd(today())) return;
+    curDay = addDays(curDay,1); renderDay();
+  };
+
+  document.addEventListener("click", function(e){
+    var t = e.target;
+
+    var chip = t.closest ? t.closest(".chip") : null;
+    if(chip){
+      var all = document.querySelectorAll(".chip");
+      for(var i=0;i<all.length;i++) all[i].classList.remove("on");
+      chip.classList.add("on");
+      document.getElementById("qType").value = chip.getAttribute("data-type");
+      return;
+    }
+
+    if(t.hasAttribute && t.hasAttribute("data-fixed")){
+      var k = t.getAttribute("data-fixed");
+      var parts = k.split("|");
+      var date = parts[0];
+      var inp = document.querySelector('.minInput[data-k="'+k+'"]');
+      var mv = inp ? (Number(inp.value)||0) : 90;
+      if(mv<=0){ toast("时长要大于 0"); return; }
+      state.records.push({id:Date.now()+Math.random(), date:date, type:t.getAttribute("data-type"), min:mv, src:"fixed", fk:k});
+      if(state.skips[date]){
+        var idx = state.skips[date].indexOf(parts[1]);
+        if(idx>=0) state.skips[date].splice(idx,1);
+      }
+      save(); renderAll(); toast("已计入 "+fx(mv/60,1)+" 小时");
+      return;
+    }
+    if(t.hasAttribute && t.hasAttribute("data-skip")){
+      var dk = ymd(curDay);
+      if(!state.skips[dk]) state.skips[dk]=[];
+      var v = t.getAttribute("data-skip");
+      if(state.skips[dk].indexOf(v)<0) state.skips[dk].push(v);
+      save(); renderDay(); toast("已标记为跳过");
+      return;
+    }
+    if(t.hasAttribute && t.hasAttribute("data-unskip")){
+      var dk2 = ymd(curDay);
+      if(state.skips[dk2]){
+        var i2 = state.skips[dk2].indexOf(t.getAttribute("data-unskip"));
+        if(i2>=0) state.skips[dk2].splice(i2,1);
+      }
+      save(); renderDay();
+      return;
+    }
+    if(t.hasAttribute && t.hasAttribute("data-del")){
+      var id = t.getAttribute("data-del");
+      state.records = state.records.filter(function(r){ return String(r.id)!==String(id); });
+      save(); renderAll(); toast("已删除");
+      return;
+    }
+  });
+
+  document.getElementById("btnAdd").onclick = function(){
+    var type = document.getElementById("qType").value;
+    var min = Number(document.getElementById("qMin").value)||0;
+    var date = document.getElementById("qDate").value || ymd(today());
+    if(min<=0 || min>1440){ toast("时长请填 1 - 1440 分钟"); return; }
+    state.records.push({id:Date.now()+Math.random(), date:date, type:type, min:min, src:"manual", fk:""});
+    save(); renderAll(); toast("已记录 "+type+" "+fx(min/60,1)+" 小时");
+  };
+
+  document.getElementById("btnSet").onclick = function(){
+    var c = document.getElementById("setCard");
+    c.style.display = (c.style.display==="none") ? "block" : "none";
+    document.getElementById("setBase").value = state.baseHours;
+    document.getElementById("setGoal").value = state.goal;
+    document.getElementById("setStart").value = state.startDate;
+    if(c.style.display==="block" && c.scrollIntoView) c.scrollIntoView({behavior:"smooth", block:"start"});
+  };
+  document.getElementById("hintGo").onclick = function(){
+    document.getElementById("setCard").style.display="block";
+    document.getElementById("setBase").value = state.baseHours;
+    document.getElementById("setGoal").value = state.goal;
+    document.getElementById("setStart").value = state.startDate;
+    var sc = document.getElementById("setCard");
+    if(sc.scrollIntoView) sc.scrollIntoView({behavior:"smooth", block:"start"});
+  };
+  document.getElementById("btnSave").onclick = function(){
+    state.baseHours = Math.max(0, Number(document.getElementById("setBase").value)||0);
+    state.goal = Math.max(1, Number(document.getElementById("setGoal").value)||650);
+    state.startDate = document.getElementById("setStart").value || state.startDate;
+    save(); renderAll(); toast("设置已保存");
+  };
+  document.getElementById("btnExport").onclick = function(){
+    try{
+      var blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "运动时长累计-备份-"+ymd(today())+".json";
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 500);
+      toast("已导出 JSON");
+    }catch(err){ toast("导出失败：" + err.message); }
+  };
+  document.getElementById("btnImport").onclick = function(){ document.getElementById("fileIn").click(); };
+  document.getElementById("fileIn").onchange = function(e){
+    var f = e.target.files && e.target.files[0];
+    if(!f) return;
+    var rd = new FileReader();
+    rd.onload = function(){
+      try{
+        var o = JSON.parse(rd.result);
+        if(!o || !Array.isArray(o.records)) throw new Error("bad");
+        state.baseHours = Number(o.baseHours)||0;
+        state.goal = Number(o.goal)||650;
+        state.startDate = o.startDate || state.startDate;
+        state.records = o.records;
+        state.skips = o.skips || {};
+        save(); renderAll(); toast("导入成功，共 "+state.records.length+" 条");
+      }catch(err){ toast("文件格式不对"); }
+    };
+    rd.readAsText(f);
+    e.target.value = "";
+  };
+  document.getElementById("btnClear").onclick = function(){
+    if(!confirm("确定清空全部运动记录？历史基数会保留，此操作不可撤销。")) return;
+    state.records = []; state.skips = {};
+    save(); renderAll(); toast("已清空");
+  };
+
+  /* ---------- init ---------- */
+  load();
+  document.getElementById("qDate").value = ymd(today());
+  document.getElementById("qMin").value = 60;
+  renderTypes();
+  renderRules();
+  renderAll();
+})();
+</script>
+</body>
+</html>
